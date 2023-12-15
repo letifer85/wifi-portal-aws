@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Number Form</title>
+</head>
+<body>
+
+    <h1>Welcome to wifi-portal</h1>
+    <p>To connect please enter your WhatsApp phone number</p>
+
+    <form id="phoneNumberForm">
+        <label for="phoneNumber">Phone Number:</label>
+        <input type="tel" id="phoneNumber" name="phoneNumber" pattern="[0-9]{6,10}" required>
+        <small>Format: 1234567890</small>
+        
+        <br>
+        
+        <button type="submit">Submit</button>
+    </form>
+
+    <script>
+        // You can add JavaScript code here to handle form submission if needed
+        document.getElementById('phoneNumberForm').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevents the default form submission behavior
+            var phoneNumber = document.getElementById('phoneNumber').value;
+            alert('Phone Number submitted: ' + phoneNumber);
+            // You can send the phone number to a server or perform other actions here
+        });
+    </script>
+
+</body>
+</html>
