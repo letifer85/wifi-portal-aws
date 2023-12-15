@@ -6,7 +6,8 @@ from typing import Any, Callable, Mapping, Sequence
 
 from aws_lambda_powertools.utilities.data_classes import APIGatewayProxyEvent
 from aws_lambda_powertools.utilities.typing import LambdaContext
-from messaging import (Message, MessageService, WhatsAppAPIConfig,
+from messaging import (CTAWhatsAppMessage, Message, MessageService,
+                       WhatsAppAPIConfig, WhatsAppAuthMessage,
                        WhatsAppMessageService)
 from requests import Response
 
@@ -33,10 +34,10 @@ class WifiPortal:
 
     def auth(self, event: APIGatewayProxyEvent, context: LambdaContext):
         provider = WhatsAppMessageService(WhatsAppAPIConfig.from_json_file("whatsapp_api_config.json"))
-        message = Message(["420777938821"])
+        message = WhatsAppAuthMessage("420777938821", verification_code="123")
         return {
             "headers": {"Content-Type": "application/json"},
-            "body": json.dumps({"message": [r.json() for r in self.send_message(provider, message)]}),
+            "body": json.dumps({"message": self.send_message(provider, message).json()}),
             "statusCode": 200,
         }
 
@@ -56,5 +57,5 @@ class WifiPortal:
             event, context
         )
 
-    def send_message(self, service_provider: MessageService, message: Message) -> Sequence[Response]:
+    def send_message(self, service_provider: MessageService, message: Message) -> Response:
         return service_provider.send(message)

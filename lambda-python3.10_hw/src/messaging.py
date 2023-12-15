@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 from functools import cached_property
-from typing import Iterator, Optional, Protocol, Sequence, TypedDict
+from typing import Any, Iterator, Optional, Protocol, TypedDict
 
 import requests
 
@@ -19,23 +19,98 @@ class WhatsAppMessageRequestBody(TypedDict):
     type: str
     template: TemplateType
 
+class Message(Protocol):
+    @cached_property
+    def payload(self) -> dict[str, Any]:
+        ...
 
 @dataclass(frozen=True)
-class Message:
-    recipients: Sequence[str]
-    content: Optional[str] = None
-    message_type: str = "template"
-    messaging_product: str = "whatsapp"
-    template_name: str = "hello_world"
+class WhatsAppAuthMessage:
+    recipient: str
+    verification_code: str
+    template_name: str = "test_auth"
     template_locale: str = "en_US"
+        
+    @cached_property
+    def payload(self) -> dict[str, Any]:
+        return {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": f"+{self.recipient.strip('+')}",
+            "type": "template",
+            "template": {
+                "name": self.template_name,
+                "language": {
+                "code": self.template_locale
+            },
+            "components": [
+                {
+                    "type": "body",
+                    "parameters": [
+                    {
+                        "type": "text",
+                        "text": self.verification_code
+                    }
+                    ]
+                },
+                {
+                    "type": "button",
+                    "sub_type": "url",
+                    "index": "0",
+                    "parameters": [
+                    {
+                        "type": "text",
+                        "text": self.verification_code
+                    }
+                    ]
+                }
+                ]
+            }
+        }
+        
 
-    def __post_init__(self) -> None:
-        if self.content is None and self.message_type != "template":
-            raise ValueError(f"content can not be None for non template message types.")
+@dataclass
+class CTAWhatsAppMessage:
+    
+    recipient: str
+    place_name: str
+    
+    @cached_property
+    def payload(self) -> dict[str, Any]:
+        return {
+            "messaging_product": "whatsapp",
+            "recipient_type": "individual",
+            "to": f"+{self.recipient.strip('+')}",
+            "type": "interactive",
+            "interactive": {
+                "type": "cta_url",
+
+                "header": {
+                    "type": "text",
+                    "text": f"Welcome To {self.place_name}"
+                },
+
+                "body": {
+                    "text": "To get wifi access please join the group."
+                },
+
+                "footer": {
+                    "text": "<FOOTER_TEXT>"
+                },
+                "action": {
+                    "name": "cta_url",
+                    "parameters": {
+                        "display_text": "Google",
+                        "url": "google.com"
+                    }
+                }
+            }
+        }
+    
 
 
 class MessageService(Protocol):
-    def send(self, message: Message) -> Iterator[requests.Response]:
+    def send(self, message: Message) -> requests.Response:
         ...
 
 
@@ -67,11 +142,11 @@ class WhatsAppMessageService:
 
 
     def send(self, message: Message) -> Iterator[requests.Response]:
-        return (requests.post(
+        return requests.post(
             url=self.config.url,
             headers=self.headers,
-            json=body
-        )for body in self.generate_message_request_bodies(message))
+            json=message.payload
+        )
 
     @property
     def headers(self) -> dict[str, str]:
@@ -80,18 +155,3 @@ class WhatsAppMessageService:
             "Content-Type": "application/json",
         }
 
-    def generate_message_request_bodies(
-        self, message: Message
-    ) -> Iterator[WhatsAppMessageRequestBody]:
-        return (
-            {
-                "messaging_product": message.messaging_product,
-                "to": number,
-                "type": message.message_type,
-                "template": {
-                    "name": message.template_name,
-                    "language": {"code": message.template_locale},
-                },
-            }
-            for number in message.recipients
-        )
