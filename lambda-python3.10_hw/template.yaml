@@ -9,9 +9,29 @@ Globals:
     Timeout: 20
 
 Resources:
+  DynamoClientTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: "ClientTable"
+      AttributeDefinitions: 
+        - 
+          AttributeName: "phone_number"
+          AttributeType: "S"
+      KeySchema: 
+        - 
+          AttributeName: "phone_number"
+          KeyType: "HASH"
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+    DependsOn: 
+      - IAMRole
+
   DefaultFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
+      Layers:
+        - !Sub "arn:aws:lambda:eu-central-1:580247275435:layer:LambdaInsightsExtension:38"
       CodeUri: src/
       Handler: app.root
       Runtime: python3.10
@@ -19,16 +39,63 @@ Resources:
         - x86_64
       Events:
         root:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
-          Properties:
-            Path: /
-            Method: get
-        auth:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Type: Api
           Properties:
             Path: /guest/s/default
             Method: get
+        auth:
+          Type: Api
+          Properties:
+            Path: /auth
+            Method: get
+        authCallback:
+          Type: Api
+          Properties:
+            Path: /auth/callback
+            Method: get
+      Role: !GetAtt IAMRole.Arn
+    DependsOn:
+      - DynamoClientTable
 
+  IAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/CloudWatchLambdaInsightsExecutionRolePolicy'
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: Policy_api-lambda-db
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'dynamodb:BatchGetItem'
+                  - 'dynamodb:BatchWriteItem'
+                  - 'dynamodb:TagResource'
+                  - 'dynamodb:UntagResource'
+                  - 'dynamodb:PutItem'
+                  - 'dynamodb:DeleteItem'
+                  - 'dynamodb:GetItem'
+                  - 'dynamodb:Scan'
+                  - 'dynamodb:Query'
+                  - 'dynamodb:UpdateItem'
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:CreateLogGroup'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
 
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
@@ -37,9 +104,12 @@ Outputs:
   Api:
     Description: "API Gateway endpoint URL for Prod stage for Hello World function"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/"
+  DynamoClientTable:
+    Description: "DynamoClientTable created"
+    Value: !GetAtt DynamoClientTable.Arn
   DefaultFunction:
     Description: "Default Lambda Function ARN"
     Value: !GetAtt DefaultFunction.Arn
-  DefaultFunctionIamRole:
-    Description: "Implicit IAM Role created for Default function"
-    Value: !GetAtt DefaultFunctionRole.Arn
+  IAMRole:
+    Description: "IAM Role created for Default function, with full dynamo access"
+    Value: !GetAtt IAMRole.Arn

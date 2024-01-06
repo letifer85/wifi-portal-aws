@@ -1,16 +1,11 @@
 {
-  "body": "{\"message\": \"hello world\"}",
+  "body": "{\"code\": \"123456\"}",
   "resource": "/",
-  "path": "/guest/s/default",
-  "httpMethod": "GET",
+  "path": "/auth/callback",
+  "httpMethod": "POST",
   "isBase64Encoded": false,
   "queryStringParameters": {
-    "phone_number": "420777938821",
-    "ap": "ap_mac",
-    "id": "id_42",
-    "t": "datetime",
-    "url": "request origin url",
-    "ssid": "ssid_value"
+    "phone_number": "420777938821"
   },
   "pathParameters": {
     "proxy": "/path/to/resource"

@@ -12,8 +12,9 @@
 
     <form id="phoneNumberForm">
         <label for="phoneNumber">Phone Number:</label>
-        <input type="tel" id="phoneNumber" name="phoneNumber" pattern="[0-9]{6,10}" required>
-        <small>Format: 1234567890</small>
+        <small>Enter the number including country code,<br>do not include '+'</small>
+        <input type="tel" id="phoneNumber" name="phoneNumber" pattern="[0-9]{5,15}" required>
+        
         
         <br>
         
@@ -25,7 +26,14 @@
         document.getElementById('phoneNumberForm').addEventListener('submit', function(event) {
             event.preventDefault(); // Prevents the default form submission behavior
             var phoneNumber = document.getElementById('phoneNumber').value;
-            alert('Phone Number submitted: ' + phoneNumber);
+            var ap = "<ap>";
+            var id = "<id>";
+            var t = "<t>";
+            var url = "<url>";
+            var ssid = "<ssid>";
+            var url = `https://alg08gxd2k.execute-api.eu-central-1.amazonaws.com/Prod/auth?phone_number=${phoneNumber}&ap=${ap}&id=${id}&t=${t}&url=${url}&ssid=${ssid}`;
+            window.location.href = url;
+            // alert('Phone Number submitted: ' + phoneNumber);
             // You can send the phone number to a server or perform other actions here
         });
     </script>
